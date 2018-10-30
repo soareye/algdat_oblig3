@@ -1,4 +1,4 @@
-import sun.awt.image.ImageWatched;
+// Erik Snilsberg s325872
 
 import java.util.*;
 
@@ -160,7 +160,6 @@ public class ObligSBinTre<T> implements Beholder<T> {
         StringBuilder strBuilder = new StringBuilder("[");
 
         ArrayDeque<Node<T>> deque = new ArrayDeque<>();
-
         Node<T> node = rot;
 
         while (node != null) {
@@ -176,10 +175,9 @@ public class ObligSBinTre<T> implements Beholder<T> {
                 current = current.venstre;
                 deque.addFirst(current);
 
-                current = current.høyre;
-                while (current != null) {
-                    deque.addFirst(current);
+                while (current.høyre != null) {
                     current = current.høyre;
+                    deque.addFirst(current);
                 }
             }
 
@@ -198,6 +196,8 @@ public class ObligSBinTre<T> implements Beholder<T> {
 
         Node<T> node = rot;
 
+        // Find the node to remove by traversing the tree,
+        // comparing the 'verdi'-attributes:
         while (node != null) {
             int cmp = comp.compare(verdi, node.verdi);
             if (cmp < 0) node = node.venstre;
@@ -205,11 +205,15 @@ public class ObligSBinTre<T> implements Beholder<T> {
             else break;
         }
 
+        // If node equals null, then the value isn't in the tree:
         if (node == null) return false;
 
         if (node.venstre == null || node.høyre == null) {
+            // If one of the children doesn't equal null, find that child:
             Node<T> child = node.venstre != null ? node.venstre : node.høyre;
 
+            // If we're removing the root node, set root to child.
+            // Else place the child in the node's parent left or right pointer:
             if (node == rot) rot = child;
             else if (node == node.forelder.venstre) node.forelder.venstre = child;
             else node.forelder.høyre = child;
@@ -217,20 +221,25 @@ public class ObligSBinTre<T> implements Beholder<T> {
             if (child != null) child.forelder = node.forelder;
 
         } else {
+            // The leftmost child of the node's right child is
+            // the value that can replace the one we are removing:
             Node<T> parent = node;
-            Node<T> rightChild = node.høyre;
-
-            while (rightChild.venstre != null) {
-                parent = rightChild;
-                rightChild = rightChild.venstre;
+            Node<T> child = node.høyre;
+            while (child.venstre != null) {
+                parent = child;
+                child = child.venstre;
             }
 
-            node.verdi = rightChild.verdi;
+            node.verdi = child.verdi;
 
-            if (parent != node) parent.venstre = rightChild.høyre;
-            else parent.høyre = rightChild.høyre;
+            // We have moved "child"'s value to the node we're removing.
+            // "child" doesn't have a left child so we place it's right child
+            // in "parent"'s right child or left child depending on how far we moved:
+            if (parent != node) parent.venstre = child.høyre;
+            else parent.høyre = child.høyre;
 
-            if (rightChild.høyre != null) rightChild.høyre.forelder = parent;
+            // Finally, we update the parent-reference of "child"'s right child if it's not null:
+            if (child.høyre != null) child.høyre.forelder = parent;
         }
 
         endringer++;
@@ -240,7 +249,6 @@ public class ObligSBinTre<T> implements Beholder<T> {
 
     // Oppgave 5
     public int fjernAlle(T verdi) {
-
         int occurrences = antall(verdi);
 
         for (int i = 0; i < occurrences; i++) {
@@ -286,7 +294,8 @@ public class ObligSBinTre<T> implements Beholder<T> {
     private String høyreGrenSubtre(Node<T> node) {
         if (node == null) return "";
 
-        StringBuilder strBuilder = new StringBuilder(node.verdi.toString());
+        StringBuilder strBuilder = new StringBuilder();
+        strBuilder.append(node.verdi);
 
         if (node.høyre != null) {
             strBuilder.append(", ");
@@ -321,6 +330,7 @@ public class ObligSBinTre<T> implements Beholder<T> {
         if (leftHeight > 0 || rightHeight > 0)
             stringBuilder.append(", ");
 
+        // Add the longest branch to the stringbuilder:
         stringBuilder.append(rightHeight > leftHeight ? right : left);
 
         return stringBuilder.toString();
@@ -337,29 +347,10 @@ public class ObligSBinTre<T> implements Beholder<T> {
     }
 
     // Oppgave 7
-    public String[] branches() {
-        String branchList[] = new String[countLeafs(rot)];
-
-        ArrayDeque<Node<T>> deque = new ArrayDeque<>();
-
-        if (rot != null) {
-            deque.addLast(rot);
-            branchList[0] = rot.verdi.toString();
-        }
-
-        while (deque.size() > 0) {
-            for (int i = 0; i < deque.size(); i++) {
-                Node<T> current = deque.removeFirst();
-
-            }
-        }
-
-        return branchList;
-    }
-
-    // Oppgave 7
     public String[] grener() {
+        // Create an array of the correct length:
         String branchList[] = new String[countLeafs(rot)];
+        // Create all branches from the root node:
         createBranch(rot, branchList, "[");
         return branchList;
     }
@@ -370,6 +361,7 @@ public class ObligSBinTre<T> implements Beholder<T> {
 
         branch += node.verdi;
 
+        // When the method reaches a leaf, add the current branch-string to the branch-list:
         if (node.venstre == null && node.høyre == null) {
             branch += "]";
             addBranch(branch, list);
@@ -383,6 +375,7 @@ public class ObligSBinTre<T> implements Beholder<T> {
     }
 
     // Oppgave 7 hjelpemetode
+    // Add a string to the first index that's not null in a list:
     private void addBranch(String branch, String branchList[]) {
         int i = 0;
         while (i < branchList.length - 1 && branchList[i] != null)
@@ -422,6 +415,7 @@ public class ObligSBinTre<T> implements Beholder<T> {
             if (node.venstre != null)
                 deque.addFirst(node.venstre);
 
+            // Only add the value if the current node is a leaf:
             if (node.venstre == null && node.høyre == null) {
                 stringBuilder.append(node.verdi);
 
@@ -431,7 +425,6 @@ public class ObligSBinTre<T> implements Beholder<T> {
         }
 
         stringBuilder.append("]");
-
         return stringBuilder.toString();
     }
 
@@ -443,32 +436,42 @@ public class ObligSBinTre<T> implements Beholder<T> {
 
         Node<T> node = rot;
 
+        // Find the leftmost leaf-node:
         while (node.venstre != null || node.høyre != null) {
             if (node.venstre != null) node = node.venstre;
             else node = node.høyre;
         }
 
+        // Do a for-loop because we know we have to go through every single node:
         for (int i = 0; i < antall; i++) {
             stringBuilder.append(node.verdi);
 
             if (node.forelder != null) {
-                if (node == node.forelder.høyre || node.forelder.høyre == null) {
-                    node = node.forelder;
-
-                } else {
-                    node = node.forelder.høyre;
-                    while (node.venstre != null || node.høyre != null) {
-                        if (node.venstre != null) node = node.venstre;
-                        else node = node.høyre;
-                    }
-                }
-
+                node = nextNodePostorder(node);
                 stringBuilder.append(", ");
             }
         }
 
         stringBuilder.append("]");
         return stringBuilder.toString();
+    }
+
+
+    // If current node is the rightmost child, then next node is the parent.
+    // Else next node is the leftmost leaf-node of the current node's sibling:
+    private Node<T> nextNodePostorder(Node<T> node) {
+        if (node == node.forelder.høyre || node.forelder.høyre == null) {
+            node = node.forelder;
+
+        } else {
+            node = node.forelder.høyre;
+            while (node.venstre != null || node.høyre != null) {
+                if (node.venstre != null) node = node.venstre;
+                else node = node.høyre;
+            }
+        }
+
+        return node;
     }
 
     @Override
@@ -509,6 +512,7 @@ public class ObligSBinTre<T> implements Beholder<T> {
             T r = p.verdi;
             q = p;
 
+            // Move up as long as 'p' doesn't have a right sibling:
             while (p.forelder != null &&
                     (p == p.forelder.høyre || p.forelder.høyre == null)) {
 
@@ -518,10 +522,12 @@ public class ObligSBinTre<T> implements Beholder<T> {
             if (p.forelder != null) {
                 p = p.forelder.høyre;
 
+                // Find the leftmost leaf-node:
                 while (p.venstre != null || p.høyre != null) {
                     if (p.venstre != null) p = p.venstre;
                     else p = p.høyre;
                 }
+
             } else {
                 p = null;
             }
