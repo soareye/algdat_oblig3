@@ -41,20 +41,22 @@ public class ObligSBinTre<T> implements Beholder<T> {
     public final boolean leggInn(T verdi) {
         Objects.requireNonNull(verdi, "Ulovlig med nullverdier!");
 
-        Node<T> p = rot, q = null;
+        Node<T> node = rot, parent = null;
         int cmp = 0;
 
-        while (p != null) {
-            q = p;
-            cmp = comp.compare(verdi, p.verdi);
-            p = cmp < 0 ? p.venstre : p.høyre;
+        // Traverse the tree, comparing values until you reach
+        // the place you want to add your node:
+        while (node != null) {
+            parent = node;
+            cmp = comp.compare(verdi, parent.verdi);
+            node = cmp < 0 ? parent.venstre : parent.høyre;
         }
 
-        p = new Node<>(verdi, q);
+        node = new Node<>(verdi, parent);
 
-        if (q == null) rot = p;
-        else if (cmp < 0) q.venstre = p;
-        else q.høyre = p;
+        if (parent == null) rot = node;
+        else if (cmp < 0) parent.venstre = node;
+        else parent.høyre = node;
 
         endringer++;
         antall++;
@@ -66,6 +68,8 @@ public class ObligSBinTre<T> implements Beholder<T> {
         if (verdi == null) return false;
 
         Node<T> p = rot;
+
+        // Traverse the tree until you find the value or reach a leaf:
         while (p != null) {
             int cmp = comp.compare(verdi, p.verdi);
             if (cmp < 0) p = p.venstre;
@@ -83,28 +87,20 @@ public class ObligSBinTre<T> implements Beholder<T> {
 
     // Oppgave 2
     public int antall(T verdi) {
-        return antallRec(verdi, rot);
+        return antallSubtre(verdi, rot);
     }
 
     // Oppgave 2 hjelpemetode
-    private int antallRec(T verdi, Node<T> node) {
+    private int antallSubtre(T verdi, Node<T> node) {
+        if (node == null) {
+            return 0;
 
-        int result = 0;
+        } else if (node.verdi.equals(verdi)) {
+            return 1 + antallSubtre(verdi, node.venstre) + antallSubtre(verdi, node.høyre);
 
-        if (node == null) return result;
-
-        if (node.verdi.equals(verdi)) {
-            result = 1;
-
-        } else if (node.venstre != null) {
-            result += antallRec(verdi, node.venstre);
+        } else {
+            return antallSubtre(verdi, node.venstre) + antallSubtre(verdi, node.høyre);
         }
-
-        if (node.høyre != null) {
-            result += antallRec(verdi, node.høyre);
-        }
-
-        return result;
     }
 
     @Override
@@ -113,6 +109,8 @@ public class ObligSBinTre<T> implements Beholder<T> {
     }
 
     // Oppgave 3
+    // The next node inorder is the current node's right sibling or
+    // the ancestor with the current node's branch as the left child:
     private static <T> Node<T> nesteInorden(Node<T> node) {
 
         if (node.høyre != null) {
@@ -457,6 +455,7 @@ public class ObligSBinTre<T> implements Beholder<T> {
     }
 
 
+    // 8 b) hjelpemetode
     // If current node is the rightmost child, then next node is the parent.
     // Else next node is the leftmost leaf-node of the current node's sibling:
     private Node<T> nextNodePostorder(Node<T> node) {
